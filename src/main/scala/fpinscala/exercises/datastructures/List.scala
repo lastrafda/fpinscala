@@ -123,24 +123,59 @@ object List: // `List` companion object. Contains functions for creating and wor
     // the author uses (acc, h) to describe x, y. Those are the correct names
     foldLeft(l, List[A](), (x, y) => List.Cons(y, x))
 
-  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = ???
+  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] =
+    // List.Cons(_, _)
+    foldRight(l, r, (acc, h) => List.Cons(acc, h))
 
-  def concat[A](l: List[List[A]]): List[A] = ???
+  def concat[A](l: List[List[A]]): List[A] =
+    /// foldRight(reverse(l), List[A](), (acc, h) => appendViaFoldRight(h, acc))
+    foldLeft(l, List[A](), appendViaFoldRight)
 
-  def incrementEach(l: List[Int]): List[Int] = ???
+  def incrementEach(l: List[Int]): List[Int] =
+    foldRight(l, List[Int](), (h, acc) => List.Cons(h + 1, acc))
 
-  def doubleToString(l: List[Double]): List[String] = ???
+  def doubleToString(l: List[Double]): List[String] =
+    foldRight(l, List[String](), (h, acc) => List.Cons(h.toString, acc))
 
-  def map[A, B](l: List[A], f: A => B): List[B] = ???
+  def map[A, B](l: List[A], f: A => B): List[B] =
+    // `foldRight` is not stack-safe. We can
+    // use `foldRightViaFoldLeft` to avoid the stack overflow
+    foldRight(l, List[B](), (h, acc) => List.Cons(f(h), acc))
 
-  def filter[A](as: List[A], f: A => Boolean): List[A] = ???
+  def filter[A](as: List[A], f: A => Boolean): List[A] =
+    foldLeft(
+      reverse(as),
+      List[A](),
+      (acc, h) => if f(h) then List.Cons(h, acc) else acc
+    )
 
-  def flatMap[A, B](as: List[A], f: A => List[B]): List[B] = ???
+  def flatMap[A, B](as: List[A], f: A => List[B]): List[B] =
+    concat(map(as, f))
 
-  def filterViaFlatMap[A](as: List[A], f: A => Boolean): List[A] = ???
+  def filterViaFlatMap[A](as: List[A], f: A => Boolean): List[A] =
+    flatMap(as, h => if f(h) then List.Cons(h, Nil) else Nil)
 
-  def addPairwise(a: List[Int], b: List[Int]): List[Int] = ???
+  def addPairwise(a: List[Int], b: List[Int]): List[Int] =
+    // I was tired so I just saw the solution, truly beautiful
+    (a, b) match
+      case (Nil, b)                     => Nil
+      case (a, Nil)                     => Nil
+      case (Cons(h1, t1), Cons(h2, t2)) => Cons(h1 + h2, addPairwise(t1, t2))
 
   // def zipWith - TODO determine signature
+  def zipWith[A, B, C](a: List[A], b: List[B], f: (A, B) => C): List[C] =
+    (a, b) match
+      case (Nil, b)                     => Nil
+      case (a, Nil)                     => Nil
+      case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2, f))
 
-  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = ???
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean =
+    def go[A](l: List[A], sub: List[A]): Boolean =
+      (l, sub) match
+        case (Cons(h1, t1), Cons(h2, t2)) if l == sub => true
+        case (_, Nil)                                 => true
+        case (Cons(h1, t1), Cons(h2, t2)) =>
+          go(drop(l, 1), sub) || go(init(l), sub)
+        case (Nil, _) => false
+
+    go(sup, sub)
