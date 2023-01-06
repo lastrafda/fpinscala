@@ -10,12 +10,14 @@ enum Tree[+A]:
     case Branch(l, r) => 1 + l.size + r.size
 
   def depth: Int =
+    // I saw the solution by mistake so I'll just paste it.
     this match
       case Leaf(_)             => 0
       case Branch(left, right) => 1 + (left.depth.max(right.depth))
-  // I saw the solution by mistake so I'll just paste it.
 
-  def map[B](f: A => B): Tree[B] = ???
+  def map[B](f: A => B): Tree[B] = this match
+    case Leaf(value)         => Leaf(f(value))
+    case Branch(left, right) => Branch(left.map(f), right.map(f))
 
   def fold[B](f: A => B, g: (B, B) => B): B = ???
 
