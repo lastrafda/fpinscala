@@ -28,9 +28,11 @@ enum Tree[+A]:
     // cleaner solution from the author
     // fold(a => 1, 1 + _ + _)
 
-  def depthViaFold: Int = ???
+  def depthViaFold: Int =
+    fold(leaf => 0, (left, right) => 1 + left.max(right))
 
-  def mapViaFold[B](f: A => B): Tree[B] = ???
+  def mapViaFold[B](f: A => B): Tree[B] =
+    fold(leaf => Leaf(f(leaf)), Branch(_, _))
 
 object Tree:
 
